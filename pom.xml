@@ -22,6 +22,30 @@
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
+
+		<!-- https://mvnrepository.com/artifact/org.mongodb.morphia/morphia -->
+
+
+		<!-- https://mvnrepository.com/artifact/org.mongodb/mongo-java-driver -->
+		<!-- https://mvnrepository.com/artifact/org.mongodb/mongo-java-driver -->
+
+
+
+
+
+
+
+		<!-- https://mvnrepository.com/artifact/org.springframework.data/spring-data-mongodb -->
+		<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-mongodb -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-mongodb</artifactId>
+			<version>3.2.2</version>
+		</dependency>
+
+
+
+
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
