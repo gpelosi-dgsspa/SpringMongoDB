@@ -18,10 +18,6 @@ public class PlayerController {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    /*TODO valuta l'idea di inibire l'inserimento dei repository direttamente all'interno del controller ma di utilizzare una classe di mezzo
-    *  di tipo SERVICE*/
-    /*private final PlayerRepository playerRepository;
-    private final PlayerDAL playerDAL;*/
     @Autowired
     private PlayerDALImpl playerDAL;
 
@@ -42,9 +38,4 @@ public class PlayerController {
         log.info("Salvataggio utente");
         return playerDAL.addNewPlayer(player);
     }
-
-    /*public PlayerController(PlayerRepository playerRepository, PlayerDAL playerDAL) {
-        this.playerRepository = playerRepository;
-        this.playerDAL = playerDAL;
-    }*/
 }

@@ -17,15 +17,15 @@ public class Player {
     @Id
     @Indexed(unique = true)
     private String id;
-    /*@Field*/
+
     private String nome;
-    /*@Field*/
+
     private String cognome;
-    /*@Field*/
+
     private Integer eta;
-    /*@Field*/
+
    private String nickname;
-    /*@Field*/
+
     private Integer livelloGiocatore;
 
 
