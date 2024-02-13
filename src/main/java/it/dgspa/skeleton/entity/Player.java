@@ -7,10 +7,6 @@ import lombok.ToString;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-import org.springframework.data.mongodb.core.mapping.MongoId;
-
-import java.time.ZonedDateTime;
-
 @Document
 @Data
 @AllArgsConstructor
@@ -20,16 +16,15 @@ public class Player {
 
     @Id
     private Integer idPlayer;
-
-    @Field
+    /*@Field*/
     private String nome;
-    @Field
+    /*@Field*/
     private String cognome;
-    @Field
+    /*@Field*/
     private Integer eta;
-    @Field
+    /*@Field*/
    private String nickname;
-    @Field
+    /*@Field*/
     private Integer livelloGiocatore;
 
 

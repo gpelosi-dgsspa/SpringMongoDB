@@ -12,7 +12,6 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 
 @Configuration
 @EnableMongoRepositories(basePackages = "it.dgsspa.skeleton.entity")
-
 public class SimpleMongoConfig {
 
     @Bean
