@@ -5,8 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
 @Document
 @Data
 @AllArgsConstructor
@@ -15,7 +15,8 @@ import org.springframework.data.mongodb.core.mapping.Field;
 public class Player {
 
     @Id
-    private Integer idPlayer;
+    @Indexed(unique = true)
+    private String id;
     /*@Field*/
     private String nome;
     /*@Field*/

@@ -24,7 +24,8 @@ public class PlayerDALImpl implements PlayerDAL {
     @Override
     public Player getPlayer(String playerId) {
         Query query = new Query();
-        query.addCriteria(Criteria.where("playerId").is(playerId));
+        query.addCriteria(Criteria.where("id").is(playerId));
+        /*return mongoTemplate.findByI*/
         return mongoTemplate.findById(query, Player.class);
     }
 
