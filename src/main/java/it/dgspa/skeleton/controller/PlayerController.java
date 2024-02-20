@@ -1,16 +1,13 @@
 package it.dgspa.skeleton.controller;
 
-import it.dgspa.skeleton.dal.PlayerDAL;
 import it.dgspa.skeleton.dalImp.PlayerDALImpl;
 import it.dgspa.skeleton.entity.Player;
-import it.dgspa.skeleton.repository.PlayerRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping(value = "/player")
