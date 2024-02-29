@@ -15,16 +15,20 @@ import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+@Service
 public class ClassificaDALImpl implements ClassificaDAL {
 
     @Autowired
     MongoTemplate mongoTemplate;
+    @Autowired
+    GameDALImpl gameImpl;
+
+    @Autowired
+    PlayerDALImpl playerImpl;
 
 
 
@@ -41,7 +45,15 @@ public class ClassificaDALImpl implements ClassificaDAL {
 
 
  */
+  public Classifica createClassifica(Classifica c){
 
+      mongoTemplate.save(c);
+      return c;
+  }
+
+    public List<Classifica> getAllRank(){
+        return mongoTemplate.findAll(Classifica.class);
+    }
 
     public Classifica getBestScorePlayer(){
 
@@ -63,7 +75,7 @@ public class ClassificaDALImpl implements ClassificaDAL {
                   Aggregation.sort(Sort.by(Sort.Direction.DESC, "count")),
                   Aggregation.limit(1));
 
-          AggregationResults<PlayerWinsDto> results = mongoTemplate.aggregate(sortAndLimit, "classifica", PlayerWinsDto.class);
+          AggregationResults<PlayerWinsDto> results = mongoTemplate.aggregate(sortAndLimit, "rank", PlayerWinsDto.class);
           return results.getUniqueMappedResult();
       }
 
@@ -71,20 +83,20 @@ public class ClassificaDALImpl implements ClassificaDAL {
 
 
 
-    public int getFiveGamesBestScore(Player player) {
+    public int getFiveGamesBestScore(String idGiocatore) {
         Aggregation aggregation = Aggregation.newAggregation(
-                Aggregation.match(Criteria.where("listaPartecipanti.idGiocatore").is(player.getId())),
+                Aggregation.match(Criteria.where("listaPartecipanti.idGiocatore").is(idGiocatore)),
                 Aggregation.sort(Sort.Direction.DESC, "dataPartita"),
                 Aggregation.limit(5),
                 Aggregation.unwind("listaPartecipanti"),
-                Aggregation.match(Criteria.where("listaPartecipanti.idGiocatore").is(player.getId())),
+                Aggregation.match(Criteria.where("listaPartecipanti.idGiocatore").is(idGiocatore)),
                 Aggregation.group().max("listaPartecipanti.punteggio").as("migliorPunteggio")
         );
 
         AggregationResults<Document> results = mongoTemplate.aggregate(aggregation, "games", Document.class);
         Document bestScoreResult = results.getUniqueMappedResult();
 
-        if (bestScoreResult != null && bestScoreResult.containsKey("miglioPunteggio")) {
+        if (bestScoreResult != null && bestScoreResult.containsKey("migliorPunteggio")) {
             Object bestScoreObject = bestScoreResult.get("migliorPunteggio");
             if (bestScoreObject instanceof Number) {
                 return ((Number) bestScoreObject).intValue();

@@ -1,71 +1,72 @@
 package it.dgspa.skeleton.controller;
 
 
-import it.dgspa.skeleton.dal.GameDAL;
+;
+import it.dgspa.skeleton.dalImp.GameDALImpl;
 import it.dgspa.skeleton.entity.Game;
 import it.dgspa.skeleton.entity.Player;
+import jakarta.websocket.server.PathParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping(value ="/games")
+@RequestMapping(value="/Games")
 public class GameController {
     private final Logger log = LoggerFactory.getLogger(getClass());
-    @Autowired
-    private GameDAL gameDAL;
 
-    @RequestMapping(value = "", method = RequestMethod.GET)
+    @Autowired
+    GameDALImpl gameDALImpl;
+
+    @RequestMapping(value = "/All", method = RequestMethod.GET)
     public List<Game> gameList(){
         log.info("Lista di tutte le partite");
-        return gameDAL.getAllGames();
+        return gameDALImpl.getAllGames();
     }
 
-
-
-    @RequestMapping(value = "/createGame", method = RequestMethod.POST)
-    public Game addNewGame(@RequestBody Game game){
-        log.info("Salvataggio della partita");
-        return gameDAL.addNewGame(game);
+    @PostMapping(value = "/createGame")
+    public Game createGame(@RequestBody Game g){
+        return gameDALImpl.addNewGame(g);
     }
 
-   @RequestMapping(value ="/PlayedGames",method = RequestMethod.GET)
-    public List<Game> getAllGamesPlayedByPlayer (String id){
-
-       return gameDAL.getAllGamesPlayedByPlayer(id);
+   @GetMapping(value="/AllGamesPlayed")
+    public
+   List<Game> getAllGamesPlayedByPlayer (@RequestParam String id){
+       log.info("ciao, siamo qui");
+       return gameDALImpl.getAllGamesPlayedByPlayer(id);
 
    }
 
     @RequestMapping(value ="/WinGames",method = RequestMethod.GET)
-    public List<Game> getAllWinGames (Player p){
+    public List<Game> getAllWinGames (@RequestParam String  idGiocatore){
 
-        return gameDAL.getAllWinGames(p);
+        return gameDALImpl.getAllWinGames(idGiocatore);
 
     }
 
     @RequestMapping(value ="/CountLooseGames",method = RequestMethod.GET)
-    public Integer getCountAllGamesLoose (Player p){
+    public Integer getCountAllGamesLoose (@RequestParam String  idGiocatore){
 
-        return gameDAL.getAllGamesLooseByPlayer(p);
+        return gameDALImpl.getAllGamesLooseByPlayer(idGiocatore);
 
     }
 
-    @RequestMapping(value ="/CountGamesPlayed",method = RequestMethod.GET)
-    public Integer getCountAllGamesPlayed (String id){
+    @RequestMapping(value ="/CountAllGames",method = RequestMethod.GET)
+    public Integer getCountAllGamesPlayed (@RequestParam String  idGiocatore){
 
-        return gameDAL.getCountAllGamesPlayedByPlayer(id);
+        return gameDALImpl.getCountAllGamesPlayedByPlayer(idGiocatore);
 
     }
     @RequestMapping(value ="/CountWinGames",method = RequestMethod.GET)
-    public Integer getCountAllGamesWin (String id){
+    public Integer getCountAllGamesWin (@RequestParam String  idGiocatore){
 
-        return gameDAL.getAllGamesWinByPlayer(id);
+        return gameDALImpl.getAllGamesWinByPlayer(idGiocatore);
 
     }
-
 
 
 

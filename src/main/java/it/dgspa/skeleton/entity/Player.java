@@ -6,9 +6,12 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document
+import java.util.List;
+
+@Document(collection = "players")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -19,7 +22,7 @@ public class Player{
     @Indexed(unique = true)
     private String id;
 
-    private Integer idGiocatore;
+    private String idGiocatore;
 
     private String nome;
 

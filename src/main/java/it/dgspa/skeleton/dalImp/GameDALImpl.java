@@ -1,14 +1,17 @@
 package it.dgspa.skeleton.dalImp;
 import it.dgspa.skeleton.dal.GameDAL;
 import it.dgspa.skeleton.entity.Game;
-import it.dgspa.skeleton.entity.Player;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
+import org.springframework.data.mongodb.core.aggregation.TypedAggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,12 +21,14 @@ public class GameDALImpl implements GameDAL {
     @Autowired
     MongoTemplate mongoTemplate;
 
-    @Override
+    private final Logger log = LoggerFactory.getLogger(getClass());
+
     public List<Game> getAllGames() {
-        return mongoTemplate.findAll(Game.class);
+        Query query = new Query();
+        return mongoTemplate.find(query,Game.class);
     }
 
-    @Override
+
     public List<Game> findGamesById(String idplayer) {
         Query query = new Query(Criteria.where("id").is(idplayer));
 
@@ -31,7 +36,7 @@ public class GameDALImpl implements GameDAL {
     }
 
 
-    @Override
+
     public Game addNewGame(Game g) {
 
         mongoTemplate.save(g);
@@ -40,36 +45,34 @@ public class GameDALImpl implements GameDAL {
     }
 
     // quali partite
-    @Override
-    public List<Game> getAllGamesPlayedByPlayer(String idPlayer) {
 
-        AggregationOperation matchOperation = Aggregation.match(Criteria.where("listaPartecipanti.idGiocatore").is(idPlayer));
+    public List<Game> getAllGamesPlayedByPlayer(String id) {
 
-        Aggregation aggregation = Aggregation.newAggregation(
-                Aggregation.unwind("listaPartecipanti"),
-                matchOperation
-        );
 
-        return mongoTemplate.aggregate(aggregation, "game", Game.class).getMappedResults();
+        TypedAggregation<Game> aggregation = Aggregation.newAggregation(Game.class,
+                Aggregation.match(Criteria.where("listaPartecipanti.idGiocatore").is(id)));
+
+
+        System.out.println(aggregation.toString());
+        List<Game> results = mongoTemplate.aggregate(aggregation, Game.class).getMappedResults();
+
+        return results;
+
     }
-
-
-
-
     //quante partite
 
-    public Integer getCountAllGamesPlayedByPlayer(String idPlayer) {
+    public Integer getCountAllGamesPlayedByPlayer(String idGiocatore) {
 
-        return this.getAllGamesPlayedByPlayer(idPlayer).size();
+        return this.getAllGamesPlayedByPlayer(idGiocatore).size();
     }
 
 
     // numero partite vinte
-    public Integer getAllGamesWinByPlayer(String idPlayer) {
+    public Integer getAllGamesWinByPlayer(String idGiocatore1) {
 
-        return this.getAllGamesPlayedByPlayer(idPlayer).
+        return this.getAllGamesPlayedByPlayer(idGiocatore1).
                 stream().
-                filter(g -> g.getIdVincitore().equals(idPlayer)).
+                filter(g -> g.getIdVincitore().equals(idGiocatore1)).
                 collect(Collectors.toList()).size();
 
 
@@ -77,25 +80,29 @@ public class GameDALImpl implements GameDAL {
 
     //numero partite perse
 
-    public Integer getAllGamesLooseByPlayer(Player p) {
+    public Integer getAllGamesLooseByPlayer(String idGiocatore) {
 
         Query query = new Query();
-        query.addCriteria(Criteria.where("listaPartecipanti").elemMatch(Criteria.where("id").is(p.getId())).and("idVincitore").ne(p.getId()));
+        query.addCriteria(Criteria.where("listaPartecipanti").elemMatch(Criteria.where("idGiocatore").is(idGiocatore)).and("idVincitore").ne(idGiocatore));
         return mongoTemplate.find(query, Game.class).size();
     }
 
-    /*
 
-    quali partite vinte  e perse
+    public List<Game> getAllWinGames(String idGiocatore) {
 
-
-     */
-    public List<Game> getAllWinGames(Player p) {
-
-        return this.getAllGamesPlayedByPlayer(p.getId()).
+        return this.getAllGamesPlayedByPlayer(idGiocatore).
                 stream().
-                filter(g -> g.getIdVincitore().equals(p.getId())).
+                filter(g -> g.getIdVincitore().equals (idGiocatore)).
                 collect(Collectors.toList());
+
+    }
+
+  //quali perse
+    public List<Game> getAllGamesLoose(String   idGiocatore) {
+
+        Query query = new Query();
+        query.addCriteria(Criteria.where("listaPartecipanti").elemMatch(Criteria.where("idGiocatore").is(idGiocatore).and("idVincitore").ne(idGiocatore)));
+        return mongoTemplate.find(query, Game.class);
 
     }
 
