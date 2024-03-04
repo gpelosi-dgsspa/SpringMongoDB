@@ -68,15 +68,20 @@ public class ClassificaDALImpl implements ClassificaDAL {
     }
 
       public PlayerWinsDto getBestPlayer(){
+          GroupOperation groupByPlayerId = Aggregation.group("idPlayer")
+                  .first("idPlayer").as("idPlayer")
+                  .count().as("numVittorie");
 
-          GroupOperation groupByPlayerId = Aggregation.group("idPlayer").count().as("count");
           MatchOperation matchWonGames = Aggregation.match(Criteria.where("win").is(true));
+
           Aggregation sortAndLimit = Aggregation.newAggregation(matchWonGames, groupByPlayerId,
-                  Aggregation.sort(Sort.by(Sort.Direction.DESC, "count")),
+                  Aggregation.sort(Sort.by(Sort.Direction.DESC, "numVittorie")),
                   Aggregation.limit(1));
 
           AggregationResults<PlayerWinsDto> results = mongoTemplate.aggregate(sortAndLimit, "rank", PlayerWinsDto.class);
+
           return results.getUniqueMappedResult();
+
       }
 
 

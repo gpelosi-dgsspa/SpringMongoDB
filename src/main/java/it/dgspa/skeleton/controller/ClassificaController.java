@@ -9,9 +9,7 @@ import jakarta.websocket.server.PathParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -30,7 +28,7 @@ public class ClassificaController {
         return classImpl.getAllRank();
     }
 
-    @RequestMapping(value ="/FiveGamesBestScore/{idGiocatore}",method = RequestMethod.GET)
+    @GetMapping(value ="/FiveGames")
     public Object getFiveGamesBestScore(@PathParam("idGiocatore") String idGiocatore){
         log.info("il miglior Punteggio nelle ultime cinque partite");
         return classImpl.getFiveGamesBestScore(idGiocatore);
@@ -42,6 +40,14 @@ public class ClassificaController {
     @RequestMapping(value ="/BestPlayer",method = RequestMethod.GET)
     public PlayerWinsDto getBestPlayer(){
         return classImpl.getBestPlayer();
+    }
+
+
+
+    @PostMapping(value= "/createClassifica")
+    public Classifica createClassifica(@RequestBody Classifica c){
+
+       return  classImpl.createClassifica(c);
     }
 
 
