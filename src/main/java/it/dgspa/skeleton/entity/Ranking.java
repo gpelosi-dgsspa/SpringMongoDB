@@ -10,20 +10,16 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Classifica {
+public class Ranking {
 
-
-    @Id
-    @Indexed(unique = true)
-    private String idClassifica;
 
     private String  idGame;
 
     private String  idPlayer;
 
-    private Integer punteggioTotale;
+    private Integer gameScore;
 
-    private Boolean win;
+    private Boolean winner;
 
 
 
