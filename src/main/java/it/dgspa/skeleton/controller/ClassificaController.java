@@ -9,6 +9,7 @@ import jakarta.websocket.server.PathParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +22,11 @@ public class ClassificaController {
 
     @Autowired
     private ClassificaDALImpl classImpl;
+
+    @DeleteMapping(value="/dropAllData")
+    public ResponseEntity<String> dropAllData(){
+        return classImpl.dropAllData();
+    }
 
     @RequestMapping(value = "", method = RequestMethod.GET)
     public List<Classifica> RankList(){

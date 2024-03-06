@@ -3,6 +3,7 @@ package it.dgspa.skeleton.dalImp;
 import it.dgspa.skeleton.dal.ClassificaDAL;
 import it.dgspa.skeleton.dto.PlayerWinsDto;
 import it.dgspa.skeleton.entity.Classifica;
+import it.dgspa.skeleton.entity.Game;
 import it.dgspa.skeleton.entity.Player;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,8 @@ import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -110,7 +113,12 @@ public class ClassificaDALImpl implements ClassificaDAL {
         return 0;
     }
 
-
+    public ResponseEntity<String> dropAllData(){
+        mongoTemplate.remove( new Query(), Classifica.class);
+        mongoTemplate.remove(new Query(), Game.class);
+        mongoTemplate.remove(new Query(), Player.class);
+        return new ResponseEntity<>("Database succesfully erased", HttpStatus.OK);
+    }
 
 
     }
