@@ -16,9 +16,6 @@ public class StartGameDTO {
     @NotNull
     private GameLevel level;
 
-    @NotNull
-    private List<String> gamePlayers;
-
     @JsonIgnore
     private Date startDate;
 

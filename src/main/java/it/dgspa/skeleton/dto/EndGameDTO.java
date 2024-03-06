@@ -17,7 +17,7 @@ public class EndGameDTO {
     private List<GamePlayerDTO> gamePlayers;
 
     @JsonIgnore
-    private Date updateDate;
+    private Date endDate;
 
     @JsonIgnore
     private GameStatus gameStatus;

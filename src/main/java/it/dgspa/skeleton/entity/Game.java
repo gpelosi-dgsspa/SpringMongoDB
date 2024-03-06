@@ -29,8 +29,6 @@ public class Game {
 
     private GameLevel gameLevel;
 
-    private List<String> nicknamePlayers;
-
     private Integer totalScore;
 
     private Date lastupdateDate;

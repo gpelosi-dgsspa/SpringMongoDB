@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -25,13 +26,13 @@ public class GamePlayerController {
     }
 
     @PostMapping(value = "/createPlayer")
-    public ResponseEntity<Player> createPlayer(@RequestBody PlayerDTO playerDTO){
+    public ResponseEntity<Object> createPlayer(@RequestBody PlayerDTO playerDTO){
         playerDTO.setPlayerStatus(PlayerStatus.ACTIVE);
         return gamePlayerService.addOrUpdatePlayer(playerDTO, true);
     }
 
     @PutMapping(value = "/deletePlayer")
-    public ResponseEntity<Player> deletePlayer(@RequestBody PlayerDTO playerDTO){
+    public ResponseEntity<Object> deletePlayer(@RequestBody PlayerDTO playerDTO){
         playerDTO.setPlayerStatus(PlayerStatus.DELETED);
         return gamePlayerService.addOrUpdatePlayer(playerDTO, false);
     }
@@ -44,12 +45,14 @@ public class GamePlayerController {
 
     @PostMapping(value = "/createGame")
     public ResponseEntity<Game> createGame(@RequestBody StartGameDTO startGame){
+        startGame.setStartDate(new Date());
         startGame.setGameStatus(GameStatus.INIZIATA);
         return gamePlayerService.startGame(startGame);
     }
 
     @PostMapping(value = "/terminateGame")
     public ResponseEntity<Object> terminateGame(@RequestBody EndGameDTO endGame){
+        endGame.setEndDate(new Date());
         endGame.setGameStatus(GameStatus.TERMINATA);
         return gamePlayerService.closeGame(endGame);
     }
@@ -72,5 +75,9 @@ public class GamePlayerController {
         return gamePlayerService.getBestScoreRank();
     }
 
+    @DeleteMapping(value = "/dropAllData")
+    public ResponseEntity<String> dropAllData(){
+        return gamePlayerService.dropAllData();
+    }
 
 }

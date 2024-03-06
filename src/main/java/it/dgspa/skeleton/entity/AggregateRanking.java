@@ -6,5 +6,5 @@ import lombok.Data;
 public class AggregateRanking {
 
     private String idPlayer;
-    private Integer total;
+    private Integer totalWins;
 }
