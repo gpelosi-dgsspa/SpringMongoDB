@@ -12,12 +12,15 @@
 ## Descrizione
 
 L'applicazione Skeleton, si basa su tecnologia Spring/SpringBoot. Sviluppata con la versione Java 17, l'Applicazione e' stata creata per interfacciarsi con un Database
-non-relazionale (MongoDB) attraverso l'utilizzo del modulo di Spring dedicato: Spring Data MongoDB al fine di gestire la profilazione Utente per un eventuale gioco Multiplayer
-Tramite l'implementazione di Swagger e servizi RESTè possibile interrogare ed interfacciarsi con il db Mongo che consta di tre Document:
+non-relazionale (MongoDB) attraverso l'utilizzo del modulo di Spring dedicato: Spring Data MongoDB al fine di gestire la profilazione Utente per un eventuale gioco Multiplayer.
+Inoltre è possibile in maniera "simulata" avviare il gioco, terminarlo, recuperando in questo modo tutte le informazioni e statistiche di gioco.
+Tramite l'implementazione di Swagger e servizi REST è possibile interrogare ed interfacciarsi con il db Mongo che consta di due Document:
 
 - Player
 - Game
-- Classifica
+
+Sfruttando Spring data MongoDb  è possibile l'interrogazione del Document Game al fine i recuperare tutte le statistiche di gioco fin'ora prodotte.
+
 
 ***
 ## Installazione

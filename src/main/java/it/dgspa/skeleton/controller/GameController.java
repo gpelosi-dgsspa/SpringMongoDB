@@ -3,16 +3,20 @@ package it.dgspa.skeleton.controller;
 
 ;
 import it.dgspa.skeleton.dalImp.GameDALImpl;
+import it.dgspa.skeleton.dto.BestPlayerScoreDto;
 import it.dgspa.skeleton.entity.Game;
 import it.dgspa.skeleton.entity.Player;
 import jakarta.websocket.server.PathParam;
+import org.apache.coyote.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping(value="/Games")
@@ -29,45 +33,75 @@ public class GameController {
     }
 
     @PostMapping(value = "/createGame")
-    public Game createGame(@RequestBody Game g){
-        return gameDALImpl.addNewGame(g);
+    public ResponseEntity<Object> createGame(@RequestBody Boolean insert){
+        return  gameDALImpl.startNewGame(insert);
     }
 
-   @GetMapping(value="/AllGamesPlayed")
-    public
-   List<Game> getAllGamesPlayedByPlayer (@RequestParam String id){
-       log.info("ciao, siamo qui");
-       return gameDALImpl.getAllGamesPlayedByPlayer(id);
-
-   }
-
-    @RequestMapping(value ="/WinGames",method = RequestMethod.GET)
-    public List<Game> getAllWinGames (@RequestParam String  idGiocatore){
-
-        return gameDALImpl.getAllWinGames(idGiocatore);
-
-    }
-
-    @RequestMapping(value ="/CountLooseGames",method = RequestMethod.GET)
-    public Integer getCountAllGamesLoose (@RequestParam String  idGiocatore){
-
-        return gameDALImpl.getAllGamesLooseByPlayer(idGiocatore);
-
-    }
-
-    @RequestMapping(value ="/CountAllGames",method = RequestMethod.GET)
-    public Integer getCountAllGamesPlayed (@RequestParam String  idGiocatore){
-
-        return gameDALImpl.getCountAllGamesPlayedByPlayer(idGiocatore);
-
-    }
-    @RequestMapping(value ="/CountWinGames",method = RequestMethod.GET)
-    public Integer getCountAllGamesWin (@RequestParam String  idGiocatore){
-
-        return gameDALImpl.getAllGamesWinByPlayer(idGiocatore);
-
+    @PostMapping(value = "/closeGame")
+    public ResponseEntity<Object> closeGame(@RequestBody String idGame){
+        return  gameDALImpl.closegame(idGame);
     }
 
 
+    @GetMapping(value ="/AllGamesPlayed")
+    public ResponseEntity<List<Game>> getAllGamesPlayedByPlayer(@RequestParam String nickname){
+
+        return gameDALImpl.getAllGamesPlayedByPlayer(nickname);
+    }
+
+    @GetMapping(value ="/CountPlayed")
+    public ResponseEntity<Integer> getCountAllGamesPlayedByPlayer (@RequestParam String nickname){
+
+        return gameDALImpl.getCountAllGamesPlayedByPlayer(nickname);
+
+    }
+
+    @GetMapping(value ="/CountWinGames")
+
+    public ResponseEntity<Integer> getCountAllWinGames (@RequestParam String nickname){
+
+        return gameDALImpl.countAllGamesPlayerWins(nickname);
+    }
+
+    @GetMapping (value ="/CountLooseGames")
+    public ResponseEntity<Integer> getAllLooseGames (@RequestParam String nickname){
+
+        return gameDALImpl.countAllGamesPlayerLosses(nickname);
+    }
+
+    @GetMapping(value ="/AllLostGames")
+    public ResponseEntity<List<Game>> getAllLostGames(@RequestParam String nickname){
+
+        return gameDALImpl.getAllLostGames(nickname);
+    }
+
+    @GetMapping(value ="/AllWinGames")
+    public ResponseEntity<List<Game>> getAllWinGames(@RequestParam String nickname){
+
+        return gameDALImpl.getAllWinGames(nickname);
+    }
+    @GetMapping(value="/BestPlayer")
+
+    public ResponseEntity<String> getBestPlayer(@RequestParam String status){
+
+
+        return gameDALImpl.getBestAbsoluteScorePlayer(status);
+    }
+
+    @GetMapping(value="/CountPlusWingGames")
+
+    public ResponseEntity<Integer> getCountPlusWinGames(@RequestParam String status){
+
+
+        return gameDALImpl.getCountPlusWingGames(status);
+    }
+
+    @GetMapping(value="/BestPlayerScoreFiveGames")
+
+    public ResponseEntity<Map<BestPlayerScoreDto,Integer>>getFive(){
+
+
+        return gameDALImpl.getBestPlayerLast5Games();
+    }
 
 }

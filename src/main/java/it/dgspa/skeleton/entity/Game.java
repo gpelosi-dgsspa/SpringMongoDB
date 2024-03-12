@@ -1,22 +1,14 @@
 package it.dgspa.skeleton.entity;
-
-
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 import it.dgspa.skeleton.GameLogic.GameEnum;
-import it.dgspa.skeleton.entity.Player;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.DocumentReference;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-
-import java.time.ZonedDateTime;
 import java.util.*;
 
 @Document(collection = "games")
@@ -29,12 +21,21 @@ public class Game {
     @Id
     @Indexed(unique = true)
     private String idGame;
+
+    @Field
+    @NotNull
     private GameEnum statoGioco;
 
+    @Field
     private  List<Player> listaPartecipanti;
 
-    private Date dataPartita;
-    private String  idVincitore;
+    @Field
+    private Date dataInizioPartita;
+    @Field
+    private Date dataFinePartita;
+    @Field
+    //classifica relativa di fine partita, giocatore-punteggio
+    private Map<String,Integer> classifica;
 
 
 

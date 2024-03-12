@@ -1,20 +1,27 @@
 package it.dgspa.skeleton.dalImp;
+import it.dgspa.skeleton.GameLogic.GameEnum;
+import it.dgspa.skeleton.GameLogic.PlayerStatus;
 import it.dgspa.skeleton.dal.GameDAL;
+import it.dgspa.skeleton.dto.BestPlayerScoreDto;
 import it.dgspa.skeleton.entity.Game;
+import it.dgspa.skeleton.entity.Player;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.TypedAggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+
 
 @Service
 public class GameDALImpl implements GameDAL {
+
 
     @Autowired
     MongoTemplate mongoTemplate;
@@ -23,7 +30,7 @@ public class GameDALImpl implements GameDAL {
 
     public List<Game> getAllGames() {
         Query query = new Query();
-        return mongoTemplate.find(query,Game.class);
+        return mongoTemplate.find(query, Game.class);
     }
 
 
@@ -34,77 +41,287 @@ public class GameDALImpl implements GameDAL {
     }
 
 
+    //crea partita e il sistema in maniera randomica assegna i partecipanti alla partita
+    public ResponseEntity<Object> startNewGame(Boolean insert) {
+        if (insert) {
+            Game g = new Game();
+            List<Player> listaPartecipanti = mongoTemplate.findAll( Player.class);
 
-    public Game addNewGame(Game g) {
+            if (listaPartecipanti.size() < 4) {
+                return new ResponseEntity<>("Non ci sono abbastanza partecipanti disponibili per avviare una nuova partita", HttpStatus.BAD_REQUEST);
+            }
 
-        mongoTemplate.save(g);
+            Collections.shuffle(listaPartecipanti);
 
-        return g;
+            g.setListaPartecipanti(listaPartecipanti.subList(0, 4)); // Limita la lista a 4 partecipanti
+            g.setStatoGioco(GameEnum.INIZIATA);
+            g.setClassifica(null);
+            g.setDataInizioPartita(new Date());
+            g.setDataFinePartita(null);
+
+            try {
+                Game game1 = mongoTemplate.save(g);
+                return new ResponseEntity<>(game1, HttpStatus.OK);
+            } catch (Exception e) {
+                return new ResponseEntity<>("Errore durante il salvataggio della partita", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        } else {
+            return new ResponseEntity<>("Inserimento non consentito", HttpStatus.BAD_REQUEST);
+        }
     }
 
-    // quali partite
+    //termina partita con relativa classifica giocatore-punteggio
 
-    public List<Game> getAllGamesPlayedByPlayer(String id) {
+    public ResponseEntity<Object> closegame(String idGame) {
+
+        Map<String, Integer> classificaRelativa = new HashMap<>();
+
+        Game game1 = mongoTemplate.findById(idGame, Game.class);
 
 
-        TypedAggregation<Game> aggregation = Aggregation.newAggregation(Game.class,
-                Aggregation.match(Criteria.where("listaPartecipanti.idGiocatore").is(id)));
+        if (game1 == null) {
+
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        }
+
+        //assegnazione Punteggio
+
+        Integer playerScore = 0;
+        for (Player player : game1.getListaPartecipanti()) {
+
+            playerScore = new Random().nextInt(100);
+
+            classificaRelativa.put(player.getNickname(), playerScore);
+        }
+
+        // ordinamento classifica decrescente
+        Map<String, Integer> classificaOrdinata = classificaRelativa.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+
+        // Gestione dei pareggi e determinazione del vincitore
+        String vincitore = null;
+        Integer punteggioMassimo = -1;
+        boolean pareggio = false;
+
+        for (Map.Entry<String, Integer> entry : classificaOrdinata.entrySet()) {
+            String nickname = entry.getKey();
+            Integer score = entry.getValue();
+            if (score > punteggioMassimo) {
+                vincitore = nickname;
+                punteggioMassimo = score;
+                pareggio = false;
+            } else if (score == punteggioMassimo) {
+                pareggio = true;
+                vincitore = null;
+                break;
+            }
+        }
+
+        for (Player player : game1.getListaPartecipanti()) {
+            int score = classificaRelativa.get(player.getNickname());
+            player.setScorePlayer(score);
+            if (player.getNickname().equals(vincitore)) {
+                player.setWin(true); // Imposta il campo win a true per il vincitore
+            } else {
+                player.setWin(false); // Imposta il campo win a false per gli altri giocatori
+            }
+        }
+        if (!pareggio) {
+            Map<String, Integer> nuovaClassificaRelativa;
+
+            nuovaClassificaRelativa = classificaOrdinata;
+
+            game1.setClassifica(nuovaClassificaRelativa);
+            game1.setListaPartecipanti(
+                    game1.getListaPartecipanti().stream()
+                            .peek(player -> player.setStatusGiocatore(PlayerStatus.NON_ATTIVO))
+                            .collect(Collectors.toList())
+            );
+            game1.setStatoGioco(GameEnum.TERMINATA);
+            game1.setDataFinePartita(new Date());
+            game1 = mongoTemplate.save(game1);
+            return new ResponseEntity<>(game1, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("la partita è finita in pareggio", HttpStatus.OK);
+        }
+    }
 
 
-        System.out.println(aggregation.toString());
-        List<Game> results = mongoTemplate.aggregate(aggregation, Game.class).getMappedResults();
 
-        return results;
+
+
+    public ResponseEntity<List<Game>> getAllGamesPlayedByPlayer(String nickname) {
+
+        Query query = new Query(Criteria.where("listaPartecipanti.nickname").is(nickname));
+        List<Game> giocatori = mongoTemplate.find(query, Game.class);
+
+
+        List<Game> partiteTerminate = giocatori.stream()
+                .filter(game -> game.getStatoGioco() == GameEnum.TERMINATA)
+                .collect(Collectors.toList());
+
+        if (partiteTerminate.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        return new ResponseEntity<>(partiteTerminate, HttpStatus.OK);
+    }
+
+
+    public ResponseEntity<Integer> getCountAllGamesPlayedByPlayer (String nickname){
+
+        Query query = new Query(Criteria.where("listaPartecipanti.nickname").is(nickname));
+        List<Game> giocatori = mongoTemplate.find(query, Game.class);
+
+     return  new ResponseEntity<>(giocatori.stream()
+             .filter(game -> game.getStatoGioco() == GameEnum.TERMINATA)
+             .collect(Collectors.toList()).size(),HttpStatus.OK);
 
     }
-    //quante partite
 
-    public Integer getCountAllGamesPlayedByPlayer(String idGiocatore) {
 
-        return this.getAllGamesPlayedByPlayer(idGiocatore).size();
+    public ResponseEntity<Integer> countAllGamesPlayerWins(String nickname) {
+        Query query = new Query(Criteria.where("listaPartecipanti").elemMatch(Criteria.where("nickname").is(nickname).and("win").is(true)));
+
+        List<Game> winGames = mongoTemplate.find(query, Game.class);
+
+        return new ResponseEntity<>(winGames.stream()
+                .filter(g->g.getStatoGioco()==GameEnum.TERMINATA)
+                .collect(Collectors.toList()).size(),HttpStatus.OK);
     }
 
 
-    // numero partite vinte
-    public Integer getAllGamesWinByPlayer(String idGiocatore1) {
 
-        return this.getAllGamesPlayedByPlayer(idGiocatore1).
-                stream().
-                filter(g -> g.getIdVincitore().equals(idGiocatore1)).
-                collect(Collectors.toList()).size();
+
+    public ResponseEntity<List<Game>> getAllWinGames(String nickname) {
+
+        Query query = new Query(Criteria.where("listaPartecipanti")
+                .elemMatch(Criteria.where("nickname").is(nickname).and("win").is(true)));
+
+        List<Game> winGames = mongoTemplate.find(query, Game.class);
+
+       return new ResponseEntity<>(winGames.stream()
+               .filter(g->g.getStatoGioco()==GameEnum.TERMINATA)
+               .collect(Collectors.toList()),HttpStatus.OK) ;
+
+    }
+
+
+
+
+    public  ResponseEntity<List<Game>> getAllLostGames(String nickname) {
+        Query query = new Query(Criteria.where("listaPartecipanti")
+                .elemMatch(Criteria.where("nickname").is(nickname).and("win").is(false)));
+        List<Game> lostGames = mongoTemplate.find(query, Game.class);
+
+        return  new ResponseEntity<>(lostGames.stream()
+                .filter(g->g.getStatoGioco()==GameEnum.TERMINATA)
+                .collect(Collectors.toList()),HttpStatus.OK);
+    }
+
+    public ResponseEntity<Integer> countAllGamesPlayerLosses(String nickname){
+
+        Query query = new Query(Criteria.where("listaPartecipanti")
+                .elemMatch(Criteria.where("nickname").is(nickname).and("win").is(false)));
+        List<Game> lostGames = mongoTemplate.find(query, Game.class);
+
+        return new ResponseEntity<>(lostGames.stream()
+                .filter(g->g.getStatoGioco()==GameEnum.TERMINATA)
+                .collect(Collectors.toList()).size(),HttpStatus.OK);
 
 
     }
 
-    //numero partite perse
+    public ResponseEntity<String> getBestAbsoluteScorePlayer (String status){
 
-    public Integer getAllGamesLooseByPlayer(String idGiocatore) {
+        Map<String, Integer> punteggioAssoluto = new HashMap<>();
+        Query query = new Query(Criteria.where("statoGioco").is(status));
+        List<Game> games = mongoTemplate.find(query,Game.class);
 
-        Query query = new Query();
-        query.addCriteria(Criteria.where("listaPartecipanti").elemMatch(Criteria.where("idGiocatore").is(idGiocatore)).and("idVincitore").ne(idGiocatore));
-        return mongoTemplate.find(query, Game.class).size();
+        for (Game game : games) {
+            Map<String, Integer> classifica = game.getClassifica();
+            for (Map.Entry<String, Integer> entry : classifica.entrySet()) {
+                String nickname = entry.getKey();
+                int score = entry.getValue();
+                punteggioAssoluto.put(nickname, Math.max(punteggioAssoluto.getOrDefault(nickname, 0), score));
+            }
+        }
+
+        int punteggioMassimoAssoluto = punteggioAssoluto.values().stream()
+                .max(Integer::compareTo)
+                .orElse(0);
+
+        String migliorGiocatore = punteggioAssoluto.entrySet().stream()
+                .filter(entry -> entry.getValue() == punteggioMassimoAssoluto)
+                .findFirst()
+                .map(Map.Entry::getKey)
+                .orElse(null);
+
+        return new ResponseEntity<>(migliorGiocatore,HttpStatus.OK);
+
     }
 
-// quali vinte
-    public List<Game> getAllWinGames(String idGiocatore) {
+    public ResponseEntity<Integer> getCountPlusWingGames(String status){
 
-        return this.getAllGamesPlayedByPlayer(idGiocatore).
-                stream().
-                filter(g -> g.getIdVincitore().equals (idGiocatore)).
-                collect(Collectors.toList());
+        Map<String, Integer> vittorieGiocatori = new HashMap<>();
+        Query query = new Query(Criteria.where("statoGioco").is(status));
+        List<Game> games = mongoTemplate.find(query,Game.class);
 
+// Itero su tutti i giochi per contare il numero di vittorie per ogni giocatore
+        for (Game game : games) {
+            Map<String, Integer> classifica = game.getClassifica();
+            for (Player player : game.getListaPartecipanti()) {
+                if (player.getWin()) {
+                    String nickname = player.getNickname();
+                    vittorieGiocatori.put(nickname, vittorieGiocatori.getOrDefault(nickname, 0) + 1);
+                }
+            }
+        }
+
+// Trovo il giocatore che ha vinto più partite
+        String migliorGiocatore = Collections.max(vittorieGiocatori.entrySet(), Map.Entry.comparingByValue()).getKey();
+
+// Trovo il numero di partite vinte dal miglior giocatore
+        Integer  numeroVittorie = vittorieGiocatori.getOrDefault(migliorGiocatore, 0);
+
+        return new ResponseEntity<>(numeroVittorie,HttpStatus.OK);
     }
 
-  //quali perse
-    public List<Game> getAllGamesLoose(String   idGiocatore) {
+    public ResponseEntity<Map<BestPlayerScoreDto, Integer>> getBestPlayerLast5Games() {
+        Query query = new Query().with(Sort.by(Sort.Direction.DESC, "dataInizioPartita")).limit(5);
+        List<Game> listaUltimeCinquePartite = mongoTemplate.find(query, Game.class);
 
-        Query query = new Query();
-        query.addCriteria(Criteria.where("listaPartecipanti").elemMatch(Criteria.where("idGiocatore").is(idGiocatore).and("idVincitore").ne(idGiocatore)));
-        return mongoTemplate.find(query, Game.class);
+        Integer punteggioMax = Integer.MIN_VALUE;
+        BestPlayerScoreDto giocatore= null;
 
+
+        for (Game game : listaUltimeCinquePartite) {
+            Map<String, Integer> classifica = game.getClassifica();
+            if (classifica != null) {
+                for (Map.Entry<String, Integer> entry : classifica.entrySet()) {
+                    String nickname = entry.getKey();
+                    Integer score = entry.getValue();
+                    if (score > punteggioMax) {
+                        punteggioMax = score;
+                        giocatore = new BestPlayerScoreDto(nickname, score);
+                    }
+                }
+            }
+        }
+        Map<BestPlayerScoreDto, Integer> bestPlayerMap = new HashMap<>();
+
+        bestPlayerMap.put(giocatore, punteggioMax);
+
+        return new ResponseEntity<>(bestPlayerMap,HttpStatus.OK);
     }
+
 
 }
+
+
 
 
 
