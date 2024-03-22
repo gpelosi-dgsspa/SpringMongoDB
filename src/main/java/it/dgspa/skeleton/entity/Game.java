@@ -20,7 +20,8 @@ public class Game {
 
     @Id
     @Indexed(unique = true)
-    private String idGame;
+    private Date dataPartita;
+
 
     @Field
     @NotNull
@@ -30,12 +31,12 @@ public class Game {
     private  List<Player> listaPartecipanti;
 
     @Field
-    private Date dataInizioPartita;
-    @Field
     private Date dataFinePartita;
     @Field
     //classifica relativa di fine partita, giocatore-punteggio
     private Map<String,Integer> classifica;
+
+
 
 
 

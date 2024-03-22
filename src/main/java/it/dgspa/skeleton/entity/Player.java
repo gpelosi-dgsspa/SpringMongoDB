@@ -1,11 +1,9 @@
 package it.dgspa.skeleton.entity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import it.dgspa.skeleton.GameLogic.PlayerGameLevel;
 import it.dgspa.skeleton.GameLogic.PlayerStatus;
 import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.DBRef;
@@ -19,48 +17,35 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
+@EqualsAndHashCode
 public class Player{
 
     @Id
     @Indexed(unique = true)
-    @NotNull
-    @NotBlank
     private String nickname;
 
 
     @Field
-    @NotNull
-    @NotBlank
     private String nome;
 
 
     @Field
-    @NotNull
-    @NotBlank
     private String cognome;
 
 
     @Field
-    @NotNull
-    @Positive
-    @Min(18)
-    @Max(100)
     private Integer eta;
     @Field
-    @NotBlank
-    @NotNull
     private PlayerGameLevel livelloGiocatore;
 
     @Field
-    @NotBlank
-    @NotNull
     private PlayerStatus statusGiocatore;
 
     @Field
     private Boolean win= false;
 
     @Field
-    @NotNull
+    @JsonIgnore
     private Integer scorePlayer=0;
 
 

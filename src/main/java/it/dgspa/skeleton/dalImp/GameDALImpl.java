@@ -3,8 +3,12 @@ import it.dgspa.skeleton.GameLogic.GameEnum;
 import it.dgspa.skeleton.GameLogic.PlayerStatus;
 import it.dgspa.skeleton.dal.GameDAL;
 import it.dgspa.skeleton.dto.BestPlayerScoreDto;
+import it.dgspa.skeleton.dto.GameDto;
+import it.dgspa.skeleton.dto.GamePlayerDto;
+import it.dgspa.skeleton.dto.PlayerDto;
 import it.dgspa.skeleton.entity.Game;
 import it.dgspa.skeleton.entity.Player;
+import it.dgspa.skeleton.mapper.GamePlayerMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +30,9 @@ public class GameDALImpl implements GameDAL {
     @Autowired
     MongoTemplate mongoTemplate;
 
+    @Autowired
+    GamePlayerMapper mapper;
+
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     public List<Game> getAllGames() {
@@ -34,30 +41,65 @@ public class GameDALImpl implements GameDAL {
     }
 
 
-    public List<Game> findGamesById(String idplayer) {
-        Query query = new Query(Criteria.where("id").is(idplayer));
+    public List<Game> findGamesById(String idGame) {
+        Query query = new Query(Criteria.where("idGame").is(idGame));
 
         return mongoTemplate.find(query, Game.class);
     }
 
+/*
 
-    //crea partita e il sistema in maniera randomica assegna i partecipanti alla partita
-    public ResponseEntity<Object> startNewGame(Boolean insert) {
-        if (insert) {
-            Game g = new Game();
-            List<Player> listaPartecipanti = mongoTemplate.findAll( Player.class);
+    public ResponseEntity<Object> startNewGame(List<PlayerDto> players) {
 
-            if (listaPartecipanti.size() < 4) {
-                return new ResponseEntity<>("Non ci sono abbastanza partecipanti disponibili per avviare una nuova partita", HttpStatus.BAD_REQUEST);
+
+        List<String> nicknameGiocatori = players.stream()
+                .map(PlayerDto::getNickname)
+                .collect(Collectors.toList());
+
+        List<Player> giocatoriASistema = mongoTemplate.find(Query.query(Criteria.where("nickname").in(nicknameGiocatori)), Player.class);
+        if (giocatoriASistema.size() != players.size()) {
+            return new ResponseEntity<>("Tutti i giocatori passati devono essere registrati nel sistema", HttpStatus.BAD_REQUEST);
+        }
+
+
+
+        List<Player> giocatori = new ArrayList<>();
+        Game g = new Game();
+        List<Player> giocatoriPresenti = mongoTemplate.findAll(Player.class);
+
+
+        // Trasformo ogni PlayerDto in un'entità Player
+        for (PlayerDto playerDto : players) {
+            // Effettua la mappatura da PlayerDto a Player
+            Player player = mapper.fromPlayerDTOtoPlayerEntity(playerDto);
+            giocatori.add(player);
+        }
+
+
+
+        Map<String, Player> giocatoriPresentiMap = new HashMap<>();
+        for (Player giocatore : giocatoriPresenti) {
+            giocatoriPresentiMap.put(giocatore.getNickname(), giocatore);
+        }
+
+// Controllo se i giocatori passati come parametro sono già presenti nel sistema
+        for (Player giocatore : giocatori) {
+            if (!giocatoriPresentiMap.containsKey(giocatore.getNickname())) {
+                return new ResponseEntity<>("Almeno uno dei giocatori non è presente nel sistema", HttpStatus.BAD_REQUEST);
             }
+        }
 
-            Collections.shuffle(listaPartecipanti);
-
-            g.setListaPartecipanti(listaPartecipanti.subList(0, 4)); // Limita la lista a 4 partecipanti
+            g.setListaPartecipanti(giocatori);
+            g.setListaPartecipanti(
+                g.getListaPartecipanti().stream()
+                        .peek(player -> player.setStatusGiocatore(PlayerStatus.ATTIVO))
+                        .collect(Collectors.toList()));
             g.setStatoGioco(GameEnum.INIZIATA);
             g.setClassifica(null);
             g.setDataInizioPartita(new Date());
             g.setDataFinePartita(null);
+            g.setChiusa(false);
+
 
             try {
                 Game game1 = mongoTemplate.save(g);
@@ -65,34 +107,65 @@ public class GameDALImpl implements GameDAL {
             } catch (Exception e) {
                 return new ResponseEntity<>("Errore durante il salvataggio della partita", HttpStatus.INTERNAL_SERVER_ERROR);
             }
-        } else {
-            return new ResponseEntity<>("Inserimento non consentito", HttpStatus.BAD_REQUEST);
+
         }
-    }
+*/
 
-    //termina partita con relativa classifica giocatore-punteggio
 
-    public ResponseEntity<Object> closegame(String idGame) {
+    public ResponseEntity<Object> closegame(GameDto gameDto) {
+
+        Game game1 = new Game();
+        List<Player> players = new ArrayList<>();
+        Set<String> nicknames = new HashSet<>();
+
+        List<GamePlayerDto> gamePlayerDtos = gameDto.getPlayers();
+        for (GamePlayerDto gamePlayerDto : gamePlayerDtos) {
+            PlayerDto playerDto = gamePlayerDto.getPlayer();
+            Player player = mapper.fromPlayerDTOtoPlayerEntity(playerDto);
+            players.add(player);
+        }
+
+
+        game1.setListaPartecipanti(players);
+
+
+        List<String> nicknameGiocatori = players.stream()
+                .map(playerDto -> playerDto.getNickname())
+                .collect(Collectors.toList());
+
+
+        List<Player> giocatoriASistema = mongoTemplate.find(Query.query(Criteria.where("nickname").in(nicknameGiocatori)), Player.class);
+
+        if (giocatoriASistema.size() != players.size()) {
+            return new ResponseEntity<>("Tutti i giocatori passati devono essere registrati nel sistema", HttpStatus.BAD_REQUEST);
+        }
+
+        for (GamePlayerDto playerDto : gameDto.getPlayers()) {
+            String nickname = playerDto.getPlayer().getNickname();
+            if (!nicknames.add(nickname)) {
+                return new ResponseEntity<>("Non possono esserci due giocatori con lo stesso nickname.", HttpStatus.BAD_REQUEST);
+            }
+
+            if (playerDto.getScore() < 0) {
+                return new ResponseEntity<>("Lo score di uno dei giocatori non può essere negativo.", HttpStatus.BAD_REQUEST);
+            }
+
+            if (playerDto.getPlayer().getEta() < 0) {
+                return new ResponseEntity<>("L'età di uno dei giocatori non può essere negativa.", HttpStatus.BAD_REQUEST);
+            }
+            int eta = playerDto.getPlayer().getEta();
+            if (eta <= 15 || eta > 100) {
+                return new ResponseEntity<>("L'età di uno dei giocatori deve essere compresa tra 15e 100.", HttpStatus.BAD_REQUEST);
+            }
+        }
+
+
+
+
 
         Map<String, Integer> classificaRelativa = new HashMap<>();
-
-        Game game1 = mongoTemplate.findById(idGame, Game.class);
-
-
-        if (game1 == null) {
-
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-
-        }
-
-        //assegnazione Punteggio
-
-        Integer playerScore = 0;
-        for (Player player : game1.getListaPartecipanti()) {
-
-            playerScore = new Random().nextInt(100);
-
-            classificaRelativa.put(player.getNickname(), playerScore);
+        for (GamePlayerDto playerDto : gameDto.getPlayers()) {
+            classificaRelativa.put(playerDto.getPlayer().getNickname(), playerDto.getScore());
         }
 
         // ordinamento classifica decrescente
@@ -101,52 +174,42 @@ public class GameDALImpl implements GameDAL {
                 .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 
-        // Gestione dei pareggi e determinazione del vincitore
-        String vincitore = null;
-        Integer punteggioMassimo = -1;
-        boolean pareggio = false;
 
+        // determina il vincitore
+        List<String> vincitori = new ArrayList<>();
+        int punteggioMassimo = classificaOrdinata.entrySet().iterator().next().getValue();
         for (Map.Entry<String, Integer> entry : classificaOrdinata.entrySet()) {
-            String nickname = entry.getKey();
-            Integer score = entry.getValue();
-            if (score > punteggioMassimo) {
-                vincitore = nickname;
-                punteggioMassimo = score;
-                pareggio = false;
-            } else if (score == punteggioMassimo) {
-                pareggio = true;
-                vincitore = null;
-                break;
-            }
-        }
-
-        for (Player player : game1.getListaPartecipanti()) {
-            int score = classificaRelativa.get(player.getNickname());
-            player.setScorePlayer(score);
-            if (player.getNickname().equals(vincitore)) {
-                player.setWin(true); // Imposta il campo win a true per il vincitore
+            if (entry.getValue() == punteggioMassimo) {
+                vincitori.add(entry.getKey());
             } else {
-                player.setWin(false); // Imposta il campo win a false per gli altri giocatori
+                break; // Poiché la classifica è ordinata, possiamo interrompere il loop quando troviamo un punteggio inferiore
             }
         }
-        if (!pareggio) {
-            Map<String, Integer> nuovaClassificaRelativa;
 
-            nuovaClassificaRelativa = classificaOrdinata;
-
-            game1.setClassifica(nuovaClassificaRelativa);
-            game1.setListaPartecipanti(
-                    game1.getListaPartecipanti().stream()
-                            .peek(player -> player.setStatusGiocatore(PlayerStatus.NON_ATTIVO))
-                            .collect(Collectors.toList())
-            );
-            game1.setStatoGioco(GameEnum.TERMINATA);
-            game1.setDataFinePartita(new Date());
-            game1 = mongoTemplate.save(game1);
-            return new ResponseEntity<>(game1, HttpStatus.OK);
+        // gestione Pareggio
+        if (vincitori.size() > 1) {
+            game1.getListaPartecipanti().forEach(player -> player.setWin(false));
         } else {
-            return new ResponseEntity<>("la partita è finita in pareggio", HttpStatus.OK);
+            // Altrimenti, assegno il vincitore
+            String vincitore = vincitori.get(0);
+            game1.getListaPartecipanti().stream()
+                    .filter(player -> player.getNickname().equals(vincitore))
+                    .findFirst()
+                    .ifPresent(player -> player.setWin(true));
         }
+
+        game1.setDataPartita(gameDto.getDataPartita());
+        game1.setClassifica( classificaOrdinata);
+        game1.setListaPartecipanti(
+                game1.getListaPartecipanti().stream()
+                        .peek(player -> player.setStatusGiocatore(PlayerStatus.NON_ATTIVO))
+                        .collect(Collectors.toList())
+        );
+        game1.setStatoGioco(GameEnum.TERMINATA);
+        game1.setDataFinePartita(gameDto.getDataPartita());
+        game1 = mongoTemplate.save(game1);
+        return new ResponseEntity<>(game1, HttpStatus.OK);
+
     }
 
 
@@ -276,6 +339,7 @@ public class GameDALImpl implements GameDAL {
             for (Player player : game.getListaPartecipanti()) {
                 if (player.getWin()) {
                     String nickname = player.getNickname();
+                    // se ogni giocatore è segnato come vincitore, se si viene incrementato il conteggio
                     vittorieGiocatori.put(nickname, vittorieGiocatori.getOrDefault(nickname, 0) + 1);
                 }
             }

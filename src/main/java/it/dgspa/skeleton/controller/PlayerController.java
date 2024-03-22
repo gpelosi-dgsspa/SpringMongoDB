@@ -1,6 +1,7 @@
 package it.dgspa.skeleton.controller;
 
 import it.dgspa.skeleton.dalImp.PlayerDALImpl;
+import it.dgspa.skeleton.dto.PlayerDto;
 import it.dgspa.skeleton.entity.Player;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,14 +25,14 @@ public class PlayerController {
         return playerDAL.playerList();
     }
 
-    @RequestMapping(value = "/{playerId}", method = RequestMethod.GET)
-    public Player getPlayer(@PathVariable String playerId){
-        log.info("Estraggo Player con ID: {}.", playerId);
-        return playerDAL.getPlayer(playerId);
+    @RequestMapping(value = "/{nickname}", method = RequestMethod.GET)
+    public Player getPlayer(@PathVariable String nickname){
+        log.info("Estraggo Player con ID: {}.", nickname);
+        return playerDAL.getPlayer(nickname);
     }
 
     @RequestMapping(value = "/create", method = RequestMethod.POST)
-    public Player addNewPlayer(@RequestBody Player player){
+    public Player addNewPlayer(@RequestBody PlayerDto player){
         log.info("Salvataggio utente");
         return playerDAL.addNewPlayer(player);
     }

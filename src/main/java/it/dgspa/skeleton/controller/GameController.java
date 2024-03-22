@@ -4,10 +4,10 @@ package it.dgspa.skeleton.controller;
 ;
 import it.dgspa.skeleton.dalImp.GameDALImpl;
 import it.dgspa.skeleton.dto.BestPlayerScoreDto;
+import it.dgspa.skeleton.dto.GameDto;
+import it.dgspa.skeleton.dto.PlayerDto;
 import it.dgspa.skeleton.entity.Game;
-import it.dgspa.skeleton.entity.Player;
-import jakarta.websocket.server.PathParam;
-import org.apache.coyote.Response;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,15 +31,15 @@ public class GameController {
         log.info("Lista di tutte le partite");
         return gameDALImpl.getAllGames();
     }
-
+/*
     @PostMapping(value = "/createGame")
-    public ResponseEntity<Object> createGame(@RequestBody Boolean insert){
-        return  gameDALImpl.startNewGame(insert);
+    public ResponseEntity<Object> createGame(@RequestBody List<PlayerDto> players){
+        return  gameDALImpl.startNewGame(players);
     }
-
+*/
     @PostMapping(value = "/closeGame")
-    public ResponseEntity<Object> closeGame(@RequestBody String idGame){
-        return  gameDALImpl.closegame(idGame);
+    public ResponseEntity<Object> closeGame(@RequestBody @Valid GameDto gameDto){
+        return  gameDALImpl.closegame(gameDto);
     }
 
 
