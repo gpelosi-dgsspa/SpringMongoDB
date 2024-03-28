@@ -40,6 +40,10 @@ public class GameDALImpl implements GameDAL {
     public ResponseEntity<Object> closegame(GameDto gameDto) {
         Date dataPartita = gameDto.getDataPartita();
 
+        if (dataPartita == null) {
+            return new ResponseEntity<>("La data della partita non può essere nulla.", HttpStatus.BAD_REQUEST);
+        }
+
         List<Game> partiteTrovate = this.getAllGames();
 
         Optional<Game> partitaTrovata = partiteTrovate.stream()
