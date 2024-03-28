@@ -8,6 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import java.util.*;
 
@@ -17,14 +18,12 @@ import java.util.*;
 @Data
 public class Game {
 
-
-    @Id
+    @MongoId
     @Indexed(unique = true)
     private Date dataPartita;
 
 
     @Field
-    @NotNull
     private GameEnum statoGioco;
 
     @Field

@@ -1,6 +1,4 @@
 package it.dgspa.skeleton.dto;
-
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -9,6 +7,7 @@ import lombok.Data;
 public class BestPlayerScoreDto {
 
 
+    private Integer position;
     private String nickname;
 
     private Integer score;

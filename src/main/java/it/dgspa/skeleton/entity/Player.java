@@ -1,16 +1,12 @@
 package it.dgspa.skeleton.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import it.dgspa.skeleton.GameLogic.PlayerGameLevel;
 import it.dgspa.skeleton.GameLogic.PlayerStatus;
-import jakarta.validation.constraints.*;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-
-import java.util.List;
+import org.springframework.data.mongodb.core.mapping.MongoId;
 
 @Document(collection = "players")
 @Data
@@ -20,9 +16,13 @@ import java.util.List;
 @EqualsAndHashCode
 public class Player{
 
-    @Id
+    @MongoId
     @Indexed(unique = true)
     private String nickname;
+
+
+    @Field
+    private String email;
 
 
     @Field
@@ -35,8 +35,6 @@ public class Player{
 
     @Field
     private Integer eta;
-    @Field
-    private PlayerGameLevel livelloGiocatore;
 
     @Field
     private PlayerStatus statusGiocatore;
